@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import Loader from "react-loader-spinner";
 import { BsPlusSquare, BsDashSquare } from "react-icons/bs";
 
+import CartContext from "../../context/CartContext";
+
 import Header from "../Header";
 
 import "./index.css";
@@ -18,7 +20,7 @@ const apiStatusConstants = {
 class ProductItemDetails extends Component {
   state = {
     productData: {},
-
+    similarProductsData: [],
     apiStatus: apiStatusConstants.initial,
     quantity: 1,
   };
@@ -46,8 +48,8 @@ class ProductItemDetails extends Component {
     this.setState({
       apiStatus: apiStatusConstants.inProgress,
     });
-    const apiUrl = ` https://gist.githubusercontent.com/sandeepdillerao/edb372a95d6cf1a2a49b79577d023281/raw?/75bf5e59e47748fad0d01ca63c81dd3791c2615c/product.json/products?
-     /products/${id}`;
+    const apiUrl = `https://gist.githubusercontent.com/sandeepdillerao/edb372a95d6cf1a2a49b79577d023281/raw?/75bf5e59e47748fad0d01ca63c81dd3791c2615c/product.json/products?
+    /products/${id}`;
 
     const response = await fetch(apiUrl);
     if (response.ok) {
@@ -56,7 +58,6 @@ class ProductItemDetails extends Component {
 
       this.setState({
         productData: updatedData,
-
         apiStatus: apiStatusConstants.success,
       });
     }
@@ -74,11 +75,11 @@ class ProductItemDetails extends Component {
   );
 
   renderFailureView = () => (
-    <div className="product-details-failure-view-container">
+    <div className="product-details-error-view-container">
       <img
-        alt="failure view"
+        alt="error view"
         src="https://assets.ccbp.in/frontend/react-js/nxt-trendz-error-view-img.png"
-        className="failure-view-image"
+        className="error-view-image"
       />
       <h1 className="product-not-found-heading">Product Not Found</h1>
       <Link to="/products">
@@ -100,69 +101,79 @@ class ProductItemDetails extends Component {
     this.setState((prevState) => ({ quantity: prevState.quantity + 1 }));
   };
 
-  renderProductDetailsView = () => {
-    const { productData, quantity } = this.state;
-    const {
-      availability,
-      brand,
-      description,
-      icon,
-      price,
+  renderProductDetailsView = () => (
+    <CartContext.Consumer>
+      {(value) => {
+        const { productData, quantity } = this.state;
+        const {
+          availability,
+          brand,
+          description,
+          icon,
+          price,
 
-      name,
-    } = productData;
+          name,
+        } = productData;
+        const { addCartItem } = value;
+        const onClickAddToCart = () => {
+          addCartItem({ ...productData, quantity });
+        };
 
-    return (
-      <div className="product-details-success-view">
-        <div className="product-details-container">
-          <img src={icon} alt="product" className="product-image" />
-          <div className="product">
-            <h1 className="product-name">{name}</h1>
-            <p className="price-details">Rs {price}20000/-</p>
-            <div className="rating-and-reviews-count">
-              <div className="rating-container"></div>
+        return (
+          <div className="product-details-success-view">
+            <div className="product-details-container">
+              <img src={icon} alt="product" className="product-image" />
+              <div className="product">
+                <h1 className="product-name">{name}</h1>
+                <p className="price-details">Rs {price}/20000-</p>
+                <div className="rating-and-reviews-count"></div>
+                <p className="product-description">
+                  {description} A monitor is a display device like a TV screen
+                  that interprets and displays the graphical output signal from
+                  your computer’s graphics card and displays it on the screen.
+                </p>
+                <div className="label-value-container">
+                  <p className="label">Available:</p>
+                  <p className="value">{availability}</p>
+                </div>
+                <div className="label-value-container">
+                  <p className="label">Brand:</p>
+                  <p className="value">{brand}</p>
+                </div>
+                <hr className="horizontal-line" />
+                <div className="quantity-container">
+                  <button
+                    type="button"
+                    className="quantity-controller-button"
+                    onClick={this.onDecrementQuantity}
+                    testid="minus"
+                  >
+                    <BsDashSquare className="quantity-controller-icon" />
+                  </button>
+                  <p className="quantity">{quantity}</p>
+                  <button
+                    type="button"
+                    className="quantity-controller-button"
+                    onClick={this.onIncrementQuantity}
+                    testid="plus"
+                  >
+                    <BsPlusSquare className="quantity-controller-icon" />
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="button add-to-cart-btn"
+                  onClick={onClickAddToCart}
+                >
+                  ADD TO CART
+                </button>
+              </div>
             </div>
-            <p className="product-description">
-              {description}A monitor is a display device like a TV screen that
-              interprets and displays the graphical output signal from your
-              computer’s graphics card and displays it on the screen.{" "}
-            </p>
-            <div className="label-value-container">
-              <p className="label">Available:</p>
-              <p className="value">{availability}</p>
-            </div>
-            <div className="label-value-container">
-              <p className="label">Brand:</p>
-              <p className="value">{brand}</p>
-            </div>
-            <hr className="horizontal-line" />
-            <div className="quantity-container">
-              <button
-                type="button"
-                className="quantity-controller-button"
-                onClick={this.onDecrementQuantity}
-                testid="minus"
-              >
-                <BsDashSquare className="quantity-controller-icon" />
-              </button>
-              <p className="quantity">{quantity}</p>
-              <button
-                type="button"
-                className="quantity-controller-button"
-                onClick={this.onIncrementQuantity}
-                testid="plus"
-              >
-                <BsPlusSquare className="quantity-controller-icon" />
-              </button>
-            </div>
-            <button type="button" className="button add-to-cart-btn">
-              ADD TO CART
-            </button>
           </div>
-        </div>
-      </div>
-    );
-  };
+        );
+      }}
+    </CartContext.Consumer>
+  );
 
   renderProductDetails = () => {
     const { apiStatus } = this.state;
